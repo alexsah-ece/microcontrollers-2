@@ -24,11 +24,14 @@
 .def button_pressed = r20 ; flag that signals if a button has been pressed
 .def temp = r21 		  ; use as auxillary register
 .def end_state = r22	  ; stores the state to which the traffic will be resumed after a turn state
+.def led_counter = r23    ; stores the number of timer0 overflows, so we can caclulate a grater time
+.def leds = r24 		  ; used for writing out values for the led control
 
 .cseg
 .org 0
 rjmp init
 .org 0x10 jmp OVR_handler
+.org 0x16 jmp OVR0_handler
 
 OVR_handler:
 	; for every interrupt, the handler increments the "counter" register
@@ -41,6 +44,57 @@ OVR_handler:
 	pop temp			; restore temp state
 	reti
 
+; handles the led patterns
+; is called every 50 ms
+; using an extra counter, led handling happens every 200 ms
+OVR0_handler:
+	push temp
+	in temp, SREG
+	push temp
+	inc led_counter
+	cpi led_counter, 4 			; 4*50 = 200 ms delay for pedestrian_lights call
+	brlo skip_pedestrian_lights ; if 200 ms have not passed, exit the handler
+	ldi led_counter, 0			; else, re-initialize led_counter 
+	rcall pedestrian_lights 	;and call pedestrian_lights handle the led patterns
+	skip_pedestrian_lights:
+		pop temp
+		out SREG, temp
+		pop temp
+		reti
+
+pedestrian_lights:
+	in leds, PORTB
+	cpi curr_state, 0
+	brne xcheck_1
+	ori leds, 0b0100_0000	; turn off LED0 (egnatia)
+	andi leds, 0b0111_1111 ;turn on LED1 (helexpo)
+	rjmp xfinish
+	xcheck_1:
+		cpi curr_state, 1
+		brne xcheck_2
+		ori leds, 0b0100_0000	; turn off LED0 (egnatia)
+		ldi temp, 0b1000_0000			
+		eor leds, temp      ; toggle LED1 (helexpo)
+		rjmp xfinish
+	xcheck_2:
+		cpi curr_state, 2
+		brne xcheck_3
+		ori leds, 0b1000_0000	; turn off LED1 (helexpo)
+		andi leds, 0b1011_1111 			; turn on LED0 (egnatia)
+		rjmp xfinish
+	xcheck_3:
+		cpi curr_state, 3
+		brne xcheck_else
+		ori leds, 0b1000_0000  ; turn off LED1 (helexpo)
+		ldi temp, 0b0100_0000			
+		eor leds, temp      ; toggle LED0 (egnatia)
+		rjmp xfinish
+	xcheck_else:			; on a turn, so leds are off
+		ori leds, 0b1100_0000	
+	xfinish:
+	out PORTB, leds
+	ret
+	
 init:
     ; initialize stack, PORTs, etc.
 	; initialize an interrupt timer with a period of 1sec
@@ -60,11 +114,12 @@ init:
 	ser temp
 	out DDRC, temp
 	out PORTC, temp
-	; PORTD input
-	clr temp
-	out DDRD, temp
+	; PORTD output
+	ldi temp, 0b11000000
 	out DDRB, temp
-	
+	com temp
+	out PORTB, temp
+
 	;initialize timer/counter ( ~ 1s)
 	ldi temp, 0x00
 	ldi temp, HIGH(65536 - 62500)
@@ -77,8 +132,15 @@ init:
 	ldi temp, 0b0000_0011 ;overflow mode + 64 prescaler
 	out TCCR1B, temp
 	
-	;timer overflow interrupt enable 
-	ldi temp, 1<<TOIE1
+		; initialize timer0/counter (0.25us * 1024 * 200 = ~ 50 ms)
+	ldi temp, 56
+	out TCNT0, temp
+	ldi temp, 0b0000_0101 ; overflow mode + 1024 prescaler
+	ldi led_counter, 0	  ; initialize overflow counts to 0
+	out TCCR0, temp
+	
+	;timer overflow interrupt enable for both timer1 & timer0
+	ldi temp, (1<<TOIE1) | (1<<TOIE0)
 	out TIMSK, temp	
 	sei
 
