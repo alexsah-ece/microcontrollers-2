@@ -12,6 +12,17 @@
 .equ D = 2
 .equ C = 6
 .equ F = 4
+; storing the needed masks to clear
+; previous state of the traffic lights
+; with the use of and andi
+.equ CLEAR_B = 0b11001111
+.equ CLEAR_F = 0b11001111
+.equ CLEAR_C = 0b00111111
+.equ CLEAR_E = 0b00111111
+.equ CLEAR_B_E = 0x0F
+.equ CLEAR_A_D = 0xF0
+.equ CLEAR_A_D_E = 0b00110000
+.equ CLEAR_A_D_B = 0b11000000
 ; decoder input codes for every colour
 .equ GREEN = 2
 .equ ORANGE = 1
@@ -203,29 +214,29 @@ turnF_A:	; F turn and initially helexpo on red
 	ldi curr_state, 6
 	; phase 0: ORANGE on B and GREEN on E
 	in temp, PINC
-	andi temp, 0x0F
+	andi temp, CLEAR_B_E
 	ori temp, (ORANGE << B) | (GREEN << E) ; egnatia
 	out PORTC, temp
 	ldi delay, 3						   ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on B, GREEN on F
 	in temp, PINC
-	andi temp, 0b11001111
+	andi temp, CLEAR_B
 	ori temp, (RED << B)
 	out PORTC, temp
 	in temp, PINA
-	andi temp, 0b11001111
+	andi temp, CLEAR_F
 	ori temp, (GREEN << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on E, ORANGE on F
 	in temp, PINC
-	andi temp, 0b00111111
+	andi temp, CLEAR_E
 	ori temp, (ORANGE << E)
 	out PORTC, temp
 	in temp, PINA
-	andi temp, 0b11001111
+	andi temp, CLEAR_F
 	ori temp, (ORANGE << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
@@ -239,25 +250,25 @@ turnF_B:	; F turn and initially egnatia on red
 	ldi curr_state, 7
 	; phase 0: ORANGE on A, ORANGE on D
 	in temp, PINC
-	andi temp, 0xf0
+	andi temp, CLEAR_A_D
 	ori temp, (ORANGE << D) | (ORANGE << A) ; helexpo
 	out PORTC, temp
 	ldi delay, 3						    ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on A & D, GREEN on E & F
 	in temp, PINC
-	andi temp, 0b00110000
+	andi temp, CLEAR_A_D_E
 	ori temp, (RED << A) | (RED << D) | (GREEN << E)
 	out PORTC, temp
 	in temp, PINA
-	andi temp, 0b11001111
+	andi temp, CLEAR_F
 	ori temp, (GREEN << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on F
 	in temp, PINA
-	andi temp, 0b11001111
+	andi temp, CLEAR_F
 	ori temp, (ORANGE << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
@@ -271,29 +282,29 @@ turnC_A:	; C turn and initially helexpo on red
 	ldi curr_state, 6
 	; phase 0: ORANGE on E and GREEN on B
 	in temp, PINC
-	andi temp, 0x0f
+	andi temp, CLEAR_B_E
 	ori temp, (ORANGE << E) | (GREEN << B) ; egnatia
 	out PORTC, temp
 	ldi delay, 3						   ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on E, GREEN on C
 	in temp, PINC
-	andi temp, 0b00111111
+	andi temp, CLEAR_E
 	ori temp, (RED << E)
 	out PORTC, temp
 	in temp, PINA
-	andi temp, 0b00111111
+	andi temp, CLEAR_C
 	ori temp, (GREEN << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on B, ORANGE on C
 	in temp, PINC
-	andi temp, 0b11001111
+	andi temp, CLEAR_B
 	ori temp, (ORANGE << B)
 	out PORTC, temp
 	in temp, PINA
-	andi temp, 0b00111111
+	andi temp, CLEAR_C
 	ori temp, (ORANGE << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
@@ -307,25 +318,25 @@ turnC_B:	; C turn and initially egnatia on red
 	ldi curr_state, 7
 	; phase 0: ORANGE on A, ORANGE on D
 	in temp, PINC
-	andi temp, 0xF0
+	andi temp, CLEAR_A_D
 	ori temp, (ORANGE << D) | (ORANGE << A) ; helexpo
 	out PORTC, temp
 	ldi delay, 3						    ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on A & D, GREEN on B & C
 	in temp, PINC
-	andi temp, 0b11000000
+	andi temp, CLEAR_A_D_B
 	ori temp, (RED << A) | (RED << D) | (GREEN << B)
 	out PORTC, temp
 	in temp, PINA
-	andi temp, 0b00111111
+	andi temp, CLEAR_C
 	ori temp, (GREEN << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on C
 	in temp, PINA
-	andi temp, 0b00111111
+	andi temp, CLEAR_C
 	ori temp, (ORANGE << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
