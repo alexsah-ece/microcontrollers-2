@@ -27,6 +27,9 @@
 .equ GREEN = 2
 .equ ORANGE = 1
 .equ RED = 0
+; pedestrian lights to LED match
+.equ PEDESTRIAN_EGNATIA = 0b0100_0000
+.equ PEDESTRIAN_HELEXPO = 0b1000_0000
 
 .def delay = r16 	      ; stores the desired delay for the next transition
 .def counter = r17 	      ; stores the seconds that have passed since last transition
@@ -77,31 +80,32 @@ pedestrian_lights:
 	in leds, PORTB
 	cpi curr_state, 0
 	brne xcheck_1
-	ori leds, 0b0100_0000	; turn off LED0 (egnatia)
-	andi leds, 0b0111_1111 ;turn on LED1 (helexpo)
+	sbr leds,  PEDESTRIAN_EGNATIA			; turn off LED6 (egnatia)
+	cbr leds, PEDESTRIAN_HELEXPO 			; turn on LED7 (helexpo)
 	rjmp xfinish
 	xcheck_1:
 		cpi curr_state, 1
 		brne xcheck_2
-		ori leds, 0b0100_0000	; turn off LED0 (egnatia)
-		ldi temp, 0b1000_0000			
-		eor leds, temp      ; toggle LED1 (helexpo)
+		sbr leds,  PEDESTRIAN_EGNATIA		; turn off LED6 (egnatia)
+		ldi temp, PEDESTRIAN_HELEXPO			
+		eor leds, temp      				; toggle LED7 (helexpo)
 		rjmp xfinish
 	xcheck_2:
 		cpi curr_state, 2
 		brne xcheck_3
-		ori leds, 0b1000_0000	; turn off LED1 (helexpo)
-		andi leds, 0b1011_1111 			; turn on LED0 (egnatia)
+		sbr leds, PEDESTRIAN_HELEXPO		; turn off LED7 (helexpo)
+		cbr leds,  PEDESTRIAN_EGNATIA		; turn on LED6 (egnatia)
 		rjmp xfinish
 	xcheck_3:
 		cpi curr_state, 3
 		brne xcheck_else
-		ori leds, 0b1000_0000  ; turn off LED1 (helexpo)
-		ldi temp, 0b0100_0000			
-		eor leds, temp      ; toggle LED0 (egnatia)
+		sbr leds, PEDESTRIAN_HELEXPO 		; turn off LED7 (helexpo)
+		ldi temp,  PEDESTRIAN_EGNATIA			
+		eor leds, temp      				; toggle LED6 (egnatia)
 		rjmp xfinish
-	xcheck_else:			; on a turn, so leds are off
-		ori leds, 0b1100_0000	
+	xcheck_else:							; on a turn, so leds are off
+		sbr leds,  PEDESTRIAN_EGNATIA
+		sbr leds, PEDESTRIAN_HELEXPO	
 	xfinish:
 	out PORTB, leds
 	ret
