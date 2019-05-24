@@ -86,11 +86,11 @@ init:
 ; eg. We want this state to last for 10 secs
 state_0:
    ldi curr_state, 0
-   in temp, PINC
+   clr temp
    ori temp, (GREEN << B) | (GREEN << E) ; egnatia
    ori temp, (RED << D) | (RED << A)     ; helexpo
    out PORTC, temp
-   in temp, PINA
+   ldi temp, 0x0F
    ori temp, (RED << C) | (RED << F)     ;egnatia turn
    out PORTA, temp
    ldi delay, 10             ; 10 sec delay for the next state
@@ -102,6 +102,7 @@ state_0:
 state_1:
    ldi curr_state, 1
    in temp, PINC
+   clr temp
    ori temp, (ORANGE << B) | (ORANGE << E) ; egnatia
    ori temp, (RED << D) | (RED << A)       ; helexpo
    out PORTC, temp
@@ -114,7 +115,7 @@ state_1:
 ; eg. We want this state to last for 5 secs
 state_2:
    ldi curr_state, 2
-   in temp, PINC
+   clr temp
    ori temp, (RED << B) | (RED << E)      ; egnatia
    ori temp, (GREEN << D) | (GREEN << A)  ; helexpo
    out PORTC, temp
@@ -127,7 +128,7 @@ state_2:
 ; eg. We want this state to remain true for 3 secs
 state_3:
    ldi curr_state, 3
-   in temp, PINC
+   clr temp
    ori temp, (RED << B) | (RED << E)         ; egnatia
    ori temp, (ORANGE << D) | (ORANGE << A)   ; helexpo
    out PORTC, temp
@@ -140,110 +141,136 @@ turnF_A:	; F turn and initially helexpo on red
 	ldi curr_state, 6
 	; phase 0: ORANGE on B and GREEN on E
 	in temp, PINC
+	andi temp, 0x0F
 	ori temp, (ORANGE << B) | (GREEN << E) ; egnatia
 	out PORTC, temp
 	ldi delay, 3						   ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on B, GREEN on F
 	in temp, PINC
+	andi temp, 0b11001111
 	ori temp, (RED << B)
 	out PORTC, temp
 	in temp, PINA
+	andi temp, 0b11001111
 	ori temp, (GREEN << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on E, ORANGE on F
 	in temp, PINC
+	andi temp, 0b00111111
 	ori temp, (ORANGE << E)
 	out PORTC, temp
 	in temp, PINA
+	andi temp, 0b11001111
 	ori temp, (ORANGE << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
 	rcall wait_for_time_sec
 	; transition to end_state = 2 so normal flow can be resumed
+	ldi temp, 0x0F
+	out PORTA, temp
 	rjmp state_2
 
 turnF_B:	; F turn and initially egnatia on red
 	ldi curr_state, 7
 	; phase 0: ORANGE on A, ORANGE on D
 	in temp, PINC
+	andi temp, 0xf0
 	ori temp, (ORANGE << D) | (ORANGE << A) ; helexpo
 	out PORTC, temp
 	ldi delay, 3						    ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on A & D, GREEN on E & F
 	in temp, PINC
-	ori temp, (RED << A) | (RED << D) | (GREEN | E)
+	andi temp, 0b00110000
+	ori temp, (RED << A) | (RED << D) | (GREEN << E)
 	out PORTC, temp
 	in temp, PINA
+	andi temp, 0b11001111
 	ori temp, (GREEN << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on F
 	in temp, PINA
+	andi temp, 0b11001111
 	ori temp, (ORANGE << F)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
 	rcall wait_for_time_sec
 	; transition to end_state = 0 so normal flow can be resumed
+	ldi temp, 0x0F
+	out PORTA, temp
 	rjmp state_0
 	
 turnC_A:	; C turn and initially helexpo on red
 	ldi curr_state, 6
 	; phase 0: ORANGE on E and GREEN on B
 	in temp, PINC
+	andi temp, 0x0f
 	ori temp, (ORANGE << E) | (GREEN << B) ; egnatia
 	out PORTC, temp
 	ldi delay, 3						   ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on E, GREEN on C
 	in temp, PINC
+	andi temp, 0b00111111
 	ori temp, (RED << E)
 	out PORTC, temp
 	in temp, PINA
+	andi temp, 0b00111111
 	ori temp, (GREEN << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on B, ORANGE on C
 	in temp, PINC
+	andi temp, 0b11001111
 	ori temp, (ORANGE << B)
 	out PORTC, temp
 	in temp, PINA
+	andi temp, 0b00111111
 	ori temp, (ORANGE << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
 	rcall wait_for_time_sec
 	; transition to end_state = 2 so normal flow can be resumed
+	ldi temp, 0x0F
+	out PORTA, temp
 	rjmp state_2
 
 turnC_B:	; C turn and initially egnatia on red
 	ldi curr_state, 7
 	; phase 0: ORANGE on A, ORANGE on D
 	in temp, PINC
+	andi temp, 0xF0
 	ori temp, (ORANGE << D) | (ORANGE << A) ; helexpo
 	out PORTC, temp
 	ldi delay, 3						    ; phase 0 duration: 3s
 	rcall wait_for_time_sec
 	; phase 1: RED on A & D, GREEN on B & C
 	in temp, PINC
-	ori temp, (RED << A) | (RED << D) | (GREEN | B)
+	andi temp, 0b11000000
+	ori temp, (RED << A) | (RED << D) | (GREEN << B)
 	out PORTC, temp
 	in temp, PINA
+	andi temp, 0b00111111
 	ori temp, (GREEN << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 1 duration: 3s
 	rcall wait_for_time_sec
 	; phase 2: ORANGE on C
 	in temp, PINA
+	andi temp, 0b00111111
 	ori temp, (ORANGE << C)
 	out PORTA, temp
 	ldi delay, 3							; phase 2 duration: 3s
 	rcall wait_for_time_sec
 	; transition to end_state = 0 so normal flow can be resumed
+	ldi temp, 0x0F
+	out PORTA, temp
 	rjmp state_0
 
 ; delay is previously set in order to  trigger
@@ -317,11 +344,11 @@ check_button_press:
 		sbrs curr_state, 1				; state 2 or 3 -> end_state = 0
 		rjmp button_press_C_end_state_0
 		ldi end_state, 2				; state 0 or 1 -> end_state = 2
-		ldi next_state, 7				; initially egnatia on red
+		ldi next_state, 5				; initially egnatia on red
 		rjmp button_press_C_end
 		button_press_C_end_state_0:
 			ldi end_state, 0
-			ldi next_state, 6			; initially helexpo on red
+			ldi next_state, 4			; initially helexpo on red
 		button_press_C_end:
 			rjmp check_button_press_end
 	check_button_press_F:
@@ -332,11 +359,11 @@ check_button_press:
 		sbrs curr_state, 1				; state 2 or 3 -> end_state = 0
 		rjmp button_press_F_end_state_0
 		ldi end_state, 2				; state 0 or 1 -> end_state = 2
-		ldi next_state, 5				; initially egnatia on red
+		ldi next_state, 7				; initially egnatia on red
 		rjmp check_button_press_end
 		button_press_F_end_state_0:
 			ldi end_state, 0
-			ldi next_state, 4			; initially helexpo on red
+			ldi next_state, 6			; initially helexpo on red
 	check_button_press_end:
 		ret
 
@@ -353,10 +380,14 @@ wait_for_time_sec:
 ; Delay 80 000 cycles
 ; 20ms at 4.0 MHz
 delay_20ms:
+	push r18
+	push r19
     ldi  r18, 104
     ldi  r19, 229
 L1: dec  r19
     brne L1
     dec  r18
     brne L1
+	pop r19
+	pop r18
 	ret
