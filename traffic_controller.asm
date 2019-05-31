@@ -132,7 +132,7 @@ init:
 	; PORTD output
 	ldi temp, 0b11000000
 	out DDRB, temp
-	com temp
+	ldi temp, 0b0100_0000
 	out PORTB, temp
 
 	;initialize timer/counter ( ~ 1s)
@@ -398,7 +398,6 @@ wait_for_transition:
 check_button_press:
 	sbic PINA, 0 				; if button A pressed, set the next state accordingly
 	rjmp check_button_press_B	; else proceed with checking button B
-	rcall delay_20ms			; debouncing
 	cpi curr_state, 2
 	brne check_button_press_B   ; if D traffic lights are not green, there is no point of state change
 	ldi next_state, 3			; else, orange will appear on D & A traffic lights
@@ -407,7 +406,6 @@ check_button_press:
 	check_button_press_B:
 		sbic PINA, 1				; if button B pressed, set the next state accordingly
 		rjmp check_button_press_C 	; else proceed with checking button C
-		rcall delay_20ms			; debouncing
 		cpi curr_state, 0
 		brne check_button_press_C   ; if B & E traffic lights are not green, there is no point of state change
 		ldi next_state, 1			; else, orange will appear on B & E traffic lights
@@ -416,7 +414,6 @@ check_button_press:
 	check_button_press_C:
 		sbic PINA, 2
 		rjmp check_button_press_F
-		rcall delay_20ms
 		ldi button_pressed, 1 			; indicate that a button event that needs to be served has occured
 		sbrs curr_state, 1				; state 2 or 3 -> end_state = 0
 		rjmp button_press_C_end_state_0
@@ -430,8 +427,7 @@ check_button_press:
 			rjmp check_button_press_end
 	check_button_press_F:
 		sbic PINA, 3
-		rjmp check_button_press_end
-		rcall delay_20ms				; debounce
+		rjmp check_button_press_end		
 		ldi button_pressed, 1 			; indicate that a button event that needs to be served has occured
 		sbrs curr_state, 1				; state 2 or 3 -> end_state = 0
 		rjmp button_press_F_end_state_0
@@ -452,19 +448,4 @@ wait_for_time_sec:
 	loop_wait:
 		cp counter, delay
 		brlo loop_wait
-	ret
-	
-; Delay 80 000 cycles
-; 20ms at 4.0 MHz
-delay_20ms:
-	push r18
-	push r19
-    ldi  r18, 104
-    ldi  r19, 229
-L1: dec  r19
-    brne L1
-    dec  r18
-    brne L1
-	pop r19
-	pop r18
 	ret
